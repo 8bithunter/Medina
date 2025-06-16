@@ -10,6 +10,7 @@ public class Draggable : MonoBehaviour
     void Start()
     {
         cam = Camera.main;
+        Block block = GetComponent<Block>();
     }
 
     void OnMouseDown()
