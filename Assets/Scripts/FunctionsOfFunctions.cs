@@ -7,11 +7,14 @@ public class FunctionsOfFunctions : MonoBehaviour
 {
     FunctionTree Differentiate(FunctionTree tree)
     {
+        FunctionTree placeholderTree = new FunctionTree(tree.function);
+        FunctionTree differentiatedTree = new FunctionTree(DifferentiateFunction(tree.function));
         for (int i = 0; i < tree.children.Count; i++)
         {
-                Differentiate(tree.children[i]);
+            placeholderTree.AddChild(Differentiate(tree.children[i]));
+            differentiatedTree.AddChild(tree.children[i]);
         }
-        return DifferentiateFunction(tree.function);
+        return null; //placeholderTree * differentiatedTree
     }
 
     Function DifferentiateFunction(Function function)
