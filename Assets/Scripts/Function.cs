@@ -2,14 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Function : Block
+public class Function : MonoBehaviour
 {
-    LinkedList<Node> list = new LinkedList<Node>();
-    public Function(string title, Color color) : base(title, color){ }
-
-    // Update is called once per frame
-    void Update()
+    string name;
+    public Function(string function)
     {
-        
+        name = function;
     }
 }

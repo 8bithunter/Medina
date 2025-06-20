@@ -31,8 +31,8 @@ public class Draggable : MonoBehaviour
         foreach (Block b in draggingBlocks)
         {
             Rigidbody2D rb = b.GetComponent<Rigidbody2D>();
-            if (rb != null && rb.bodyType != RigidbodyType2D.Kinematic)
-                rb.bodyType = RigidbodyType2D.Kinematic;
+            //if (rb != null && rb.bodyType != RigidbodyType2D.Kinematic)
+                //rb.bodyType = RigidbodyType2D.Kinematic;
         }
     }
 
