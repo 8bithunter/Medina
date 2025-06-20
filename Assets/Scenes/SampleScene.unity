@@ -298,6 +298,7 @@ GameObject:
   - component: {fileID: 1593524570}
   - component: {fileID: 1593524576}
   - component: {fileID: 1593524577}
+  - component: {fileID: 1593524579}
   m_Layer: 0
   m_Name: Dynamic Sprite (1)
   m_TagString: Untagged
@@ -489,6 +490,19 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &1593524579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1593524569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a421427abc5d73f40b80db1499f0899d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputExpression: tan(x^2 /e^(x))
 --- !u!1 &1765199130
 GameObject:
   m_ObjectHideFlags: 0
