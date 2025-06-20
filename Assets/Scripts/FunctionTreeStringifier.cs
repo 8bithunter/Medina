@@ -180,6 +180,12 @@ public static class FunctionTreeStringifier
         // Simplify (a^b)^c => a^(b*c)
         if (func == "pow" && children.Count == 2)
         {
+            // Recursively simplify multiplication inside exponent
+            if (children[1].function.name == "mul")
+            {
+                children[1] = StringCompressor(children[1]);
+            }
+
             if (children[0].function.name == "pow" && children[0].children.Count == 2)
             {
                 var a = children[0].children[0];
@@ -194,48 +200,34 @@ public static class FunctionTreeStringifier
             }
         }
 
-        // Helper: check if node is constant and get numeric value
         bool IsConst(FunctionTree node, out double val)
         {
             val = 0;
             if (node.function.name.StartsWith("const"))
             {
                 string numStr = node.function.name.Substring(5);
-                if (numStr == "e" || numStr == "pi")
-                    return false; // special constants no numeric val
+                if (numStr == "e" || numStr == "pi") return false;
                 return double.TryParse(numStr, out val);
             }
             return false;
         }
 
-        // Helper: check if node is special constant like "conste" or "constpi"
         bool IsSpecialConstant(FunctionTree node, out string symbol)
         {
             symbol = null;
-            if (node.function.name == "conste")
-            {
-                symbol = "e";
-                return true;
-            }
-            else if (node.function.name == "constpi")
-            {
-                symbol = "π";
-                return true;
-            }
+            if (node.function.name == "conste") { symbol = "e"; return true; }
+            if (node.function.name == "constpi") { symbol = "π"; return true; }
             return false;
         }
 
-        // Simplify binary operators
         if ((func == "mul" || func == "add" || func == "sub" || func == "div" || func == "pow") && children.Count == 2)
         {
             double leftVal, rightVal;
             bool leftIsConst = IsConst(children[0], out leftVal);
             bool rightIsConst = IsConst(children[1], out rightVal);
 
-            // ✴️ Multiplication rules
             if (func == "mul")
             {
-                // Combine x^a * x^b → x^(a + b)
                 if (children[0].function.name == "pow" && children[1].function.name == "pow")
                 {
                     var base1 = children[0].children[0];
@@ -245,85 +237,104 @@ public static class FunctionTreeStringifier
                         var newExp = new FunctionTree(new Function("add"));
                         newExp.AddChild(children[0].children[1]);
                         newExp.AddChild(children[1].children[1]);
-
-                        return new FunctionTree(new Function("pow"))
-                        {
-                            children = { base1, StringCompressor(newExp) }
-                        };
+                        return new FunctionTree(new Function("pow")) { children = { base1, StringCompressor(newExp) } };
                     }
                 }
-
-                // x * x^b → x^(1 + b)
-                if (children[0].function.name == "var" && children[1].function.name == "pow" &&
-                    children[1].children[0].function.name == "var")
+                if (children[0].function.name == "var" && children[1].function.name == "pow" && children[1].children[0].function.name == "var")
                 {
                     var newExp = new FunctionTree(new Function("add"));
                     newExp.AddChild(new FunctionTree(new Function("const1")));
                     newExp.AddChild(children[1].children[1]);
-
-                    return new FunctionTree(new Function("pow"))
-                    {
-                        children = { children[0], StringCompressor(newExp) }
-                    };
+                    return new FunctionTree(new Function("pow")) { children = { children[0], StringCompressor(newExp) } };
                 }
-
-                // x^a * x → x^(a + 1)
-                if (children[1].function.name == "var" && children[0].function.name == "pow" &&
-                    children[0].children[0].function.name == "var")
+                if (children[1].function.name == "var" && children[0].function.name == "pow" && children[0].children[0].function.name == "var")
                 {
                     var newExp = new FunctionTree(new Function("add"));
                     newExp.AddChild(children[0].children[1]);
                     newExp.AddChild(new FunctionTree(new Function("const1")));
-
-                    return new FunctionTree(new Function("pow"))
-                    {
-                        children = { children[1], StringCompressor(newExp) }
-                    };
+                    return new FunctionTree(new Function("pow")) { children = { children[1], StringCompressor(newExp) } };
                 }
-
-                // Multiply by 1
                 if (leftIsConst && leftVal == 1) return children[1];
                 if (rightIsConst && rightVal == 1) return children[0];
-
-                // Multiply by 0
                 if ((leftIsConst && leftVal == 0) || (rightIsConst && rightVal == 0))
                     return new FunctionTree(new Function("const0"));
             }
 
-            // ➕ Addition by 0
-            if (func == "add")
+            if (func == "add" || func == "sub")
             {
-                if (leftIsConst && leftVal == 0) return children[1];
-                if (rightIsConst && rightVal == 0) return children[0];
+                // Zero addition/subtraction simplifications
+                if (func == "add")
+                {
+                    if (leftIsConst && leftVal == 0) return children[1];
+                    if (rightIsConst && rightVal == 0) return children[0];
+                }
+                else if (func == "sub")
+                {
+                    if (rightIsConst && rightVal == 0) return children[0];
+                }
+
+                // Factoring common terms out of addition/subtraction
+                List<FunctionTree> leftFactors = children[0].function.name == "mul"
+                    ? new List<FunctionTree>(children[0].children)
+                    : new List<FunctionTree> { children[0] };
+
+                List<FunctionTree> rightFactors = children[1].function.name == "mul"
+                    ? new List<FunctionTree>(children[1].children)
+                    : new List<FunctionTree> { children[1] };
+
+                List<FunctionTree> commonFactors = new List<FunctionTree>();
+                List<FunctionTree> leftUnique = new List<FunctionTree>(leftFactors);
+                List<FunctionTree> rightUnique = new List<FunctionTree>(rightFactors);
+
+                for (int i = 0; i < leftFactors.Count; i++)
+                {
+                    for (int j = 0; j < rightFactors.Count; j++)
+                    {
+                        if (AreTreesEqual(leftFactors[i], rightFactors[j]))
+                        {
+                            commonFactors.Add(leftFactors[i]);
+                            leftUnique.Remove(leftFactors[i]);
+                            rightUnique.Remove(rightFactors[j]);
+                            break;
+                        }
+                    }
+                }
+
+                if (commonFactors.Count > 0)
+                {
+                    FunctionTree factoredTerm = commonFactors.Count == 1
+                        ? commonFactors[0]
+                        : new FunctionTree(new Function("mul")) { children = commonFactors };
+
+                    FunctionTree newLeft = leftUnique.Count == 1
+                        ? leftUnique[0]
+                        : new FunctionTree(new Function("mul")) { children = leftUnique };
+
+                    FunctionTree newRight = rightUnique.Count == 1
+                        ? rightUnique[0]
+                        : new FunctionTree(new Function("mul")) { children = rightUnique };
+
+                    FunctionTree inner;
+                    if (func == "add")
+                        inner = new FunctionTree(new Function("add")) { children = { newLeft, newRight } };
+                    else
+                        inner = new FunctionTree(new Function("sub")) { children = { newLeft, newRight } };
+
+                    return new FunctionTree(new Function("mul")) { children = { factoredTerm, StringCompressor(inner) } };
+                }
             }
 
-            // ➖ Subtraction by 0
-            if (func == "sub")
-            {
-                if (rightIsConst && rightVal == 0) return children[0];
-            }
-
-            // ➗ Division simplifications
             if (func == "div")
             {
                 if (rightIsConst && rightVal == 1) return children[0];
-
-                // 0 / anything = 0
                 if (leftIsConst && leftVal == 0 && !(rightIsConst && rightVal == 0))
                     return new FunctionTree(new Function("const0"));
 
-                // Cancel common multiplicative terms
                 if (children[0].function.name == "mul" || children[1].function.name == "mul")
                 {
-                    List<FunctionTree> topTerms = children[0].function.name == "mul"
-                        ? new List<FunctionTree>(children[0].children)
-                        : new List<FunctionTree> { children[0] };
+                    List<FunctionTree> topTerms = children[0].function.name == "mul" ? new List<FunctionTree>(children[0].children) : new List<FunctionTree> { children[0] };
+                    List<FunctionTree> bottomTerms = children[1].function.name == "mul" ? new List<FunctionTree>(children[1].children) : new List<FunctionTree> { children[1] };
 
-                    List<FunctionTree> bottomTerms = children[1].function.name == "mul"
-                        ? new List<FunctionTree>(children[1].children)
-                        : new List<FunctionTree> { children[1] };
-
-                    // Cancel identical factors
                     for (int i = 0; i < topTerms.Count; i++)
                     {
                         for (int j = 0; j < bottomTerms.Count; j++)
@@ -338,24 +349,15 @@ public static class FunctionTreeStringifier
                         }
                     }
 
-                    // Rebuild numerator
-                    FunctionTree newTop = topTerms.Count == 1 ? topTerms[0] :
-                        new FunctionTree(new Function("mul")) { children = topTerms };
-
-                    // Rebuild denominator
-                    FunctionTree newBottom = bottomTerms.Count == 1 ? bottomTerms[0] :
-                        new FunctionTree(new Function("mul")) { children = bottomTerms };
+                    FunctionTree newTop = topTerms.Count == 1 ? topTerms[0] : new FunctionTree(new Function("mul")) { children = topTerms };
+                    FunctionTree newBottom = bottomTerms.Count == 1 ? bottomTerms[0] : new FunctionTree(new Function("mul")) { children = bottomTerms };
 
                     if (IsConst(newBottom, out double val) && val == 1)
                         return newTop;
 
-                    return new FunctionTree(new Function("div"))
-                    {
-                        children = { newTop, newBottom }
-                    };
+                    return new FunctionTree(new Function("div")) { children = { newTop, newBottom } };
                 }
 
-                // x^a / x^b → x^(a - b)
                 if (children[0].function.name == "pow" && children[1].function.name == "pow")
                 {
                     var base1 = children[0].children[0];
@@ -366,19 +368,16 @@ public static class FunctionTreeStringifier
                         newExp.AddChild(children[0].children[1]);
                         newExp.AddChild(children[1].children[1]);
 
-                        return new FunctionTree(new Function("pow"))
-                        {
-                            children = { base1, StringCompressor(newExp) }
-                        };
+                        var simplifiedExp = StringCompressor(newExp);
+                        var newPow = new FunctionTree(new Function("pow")) { children = { base1, simplifiedExp } };
+                        return StringCompressor(newPow);
                     }
                 }
 
-                // x / x → 1
                 if (AreTreesEqual(children[0], children[1]))
                     return new FunctionTree(new Function("const1"));
             }
 
-            // 🔺 Power simplifications
             if (func == "pow")
             {
                 if (rightIsConst && rightVal == 1) return children[0];
@@ -386,7 +385,6 @@ public static class FunctionTreeStringifier
                 if (leftIsConst && leftVal == 1) return new FunctionTree(new Function("const1"));
             }
 
-            // 🔢 Evaluate constants
             if (leftIsConst && rightIsConst)
             {
                 double result;
@@ -397,8 +395,7 @@ public static class FunctionTreeStringifier
                     case "mul": result = leftVal * rightVal; break;
                     case "div":
                         if (rightVal == 0) throw new DivideByZeroException();
-                        result = leftVal / rightVal;
-                        break;
+                        result = leftVal / rightVal; break;
                     case "pow": result = Math.Pow(leftVal, rightVal); break;
                     default: return tree;
                 }
@@ -406,7 +403,6 @@ public static class FunctionTreeStringifier
             }
         }
 
-        // Simplify negation of constants: neg(const5) -> const-5 or neg(conste) -> -e
         if (func == "neg" && children.Count == 1)
         {
             if (IsConst(children[0], out double val))
@@ -419,9 +415,9 @@ public static class FunctionTreeStringifier
             }
         }
 
-        // No simplification possible
         return tree;
     }
+
 
     private static bool AreTreesEqual(FunctionTree a, FunctionTree b)
     {
