@@ -15,6 +15,7 @@ public class TestFunctions : MonoBehaviour
             // 1. Parse
             var parser = new FunctionParser();
             FunctionTree tree = parser.Parse(inputExpression);
+            tree = FunctionTreeStringifier.StringCompressor(tree);
 
             // 2. Differentiate
             FunctionTree derivative = FunctionsOfFunctions.Differentiate(tree);

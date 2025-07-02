@@ -339,6 +339,118 @@ public static class FunctionsOfFunctions
             return result;
         }
 
+                // arcsin(f)
+        if (func == "arcsin" && children.Count == 1)
+        {
+            var f = children[0];
+            var fPrime = Differentiate(f);
+
+            var fSquared = new FunctionTree(new Function("pow"));
+            fSquared.AddChild(CloneTree(f));
+            fSquared.AddChild(new FunctionTree(new Function("const2")));
+
+            var one = new FunctionTree(new Function("const1"));
+
+            var insideRoot = new FunctionTree(new Function("sub"));
+            insideRoot.AddChild(one);
+            insideRoot.AddChild(fSquared);
+
+            var sqrt = new FunctionTree(new Function("pow"));
+            sqrt.AddChild(insideRoot);
+            sqrt.AddChild(new FunctionTree(new Function("const0.5")));
+
+            var result = new FunctionTree(new Function("div"));
+            result.AddChild(fPrime);
+            result.AddChild(sqrt);
+
+            return result;
+        }
+
+        // arccos(f)
+        if (func == "arccos" && children.Count == 1)
+        {
+            var arcsinTree = Differentiate(new FunctionTree(new Function("arcsin")) { children = children });
+            var neg = new FunctionTree(new Function("neg"));
+            neg.AddChild(arcsinTree);
+            return neg;
+        }
+
+        // arctan(f)
+        if (func == "arctan" && children.Count == 1)
+        {
+            var f = children[0];
+            var fPrime = Differentiate(f);
+
+            var fSquared = new FunctionTree(new Function("pow"));
+            fSquared.AddChild(CloneTree(f));
+            fSquared.AddChild(new FunctionTree(new Function("const2")));
+
+            var one = new FunctionTree(new Function("const1"));
+
+            var denominator = new FunctionTree(new Function("add"));
+            denominator.AddChild(one);
+            denominator.AddChild(fSquared);
+
+            var result = new FunctionTree(new Function("div"));
+            result.AddChild(fPrime);
+            result.AddChild(denominator);
+
+            return result;
+        }
+
+        // arccot(f) = -1 / (1 + f^2)
+        if (func == "arccot" && children.Count == 1)
+        {
+            var arctanTree = Differentiate(new FunctionTree(new Function("arctan")) { children = children });
+            var neg = new FunctionTree(new Function("neg"));
+            neg.AddChild(arctanTree);
+            return neg;
+        }
+
+        // arcsec(f)
+        if (func == "arcsec" && children.Count == 1)
+        {
+            var f = children[0];
+            var fPrime = Differentiate(f);
+
+            var fSquared = new FunctionTree(new Function("pow"));
+            fSquared.AddChild(CloneTree(f));
+            fSquared.AddChild(new FunctionTree(new Function("const2")));
+
+            var one = new FunctionTree(new Function("const1"));
+
+            var insideRoot = new FunctionTree(new Function("sub"));
+            insideRoot.AddChild(fSquared);
+            insideRoot.AddChild(one);
+
+            var sqrt = new FunctionTree(new Function("pow"));
+            sqrt.AddChild(insideRoot);
+            sqrt.AddChild(new FunctionTree(new Function("const0.5")));
+
+            var absF = new FunctionTree(new Function("abs"));
+            absF.AddChild(CloneTree(f));
+
+            var denominator = new FunctionTree(new Function("mul"));
+            denominator.AddChild(absF);
+            denominator.AddChild(sqrt);
+
+            var result = new FunctionTree(new Function("div"));
+            result.AddChild(fPrime);
+            result.AddChild(denominator);
+
+            return result;
+        }
+
+        // arccsc(f)
+        if (func == "arccsc" && children.Count == 1)
+        {
+            var arcsecTree = Differentiate(new FunctionTree(new Function("arcsec")) { children = children });
+            var neg = new FunctionTree(new Function("neg"));
+            neg.AddChild(arcsecTree);
+            return neg;
+        }
+
+
         // negation (unary minus)
         if (func == "neg" && children.Count == 1)
         {

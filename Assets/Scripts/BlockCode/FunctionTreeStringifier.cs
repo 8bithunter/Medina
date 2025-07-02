@@ -159,6 +159,146 @@ public static class FunctionTreeStringifier
         string func = tree.function.name;
         var children = tree.children;
 
+        // Simplify inverse trig functions composition, e.g. arccos(cos(x)) = x, cos(arccos(x)) = x
+        if (children.Count == 1)
+        {
+            string childFunc = children[0].function.name;
+
+            // arccos(cos(x)) = x
+            if (func == "arccos" && childFunc == "cos")
+            {
+                return children[0].children[0];
+            }
+            // cos(arccos(x)) = x
+            if (func == "cos" && childFunc == "arccos")
+            {
+                return children[0].children[0];
+            }
+            // arcsin(sin(x)) = x
+            if (func == "arcsin" && childFunc == "sin")
+            {
+                return children[0].children[0];
+            }
+            // sin(arcsin(x)) = x
+            if (func == "sin" && childFunc == "arcsin")
+            {
+                return children[0].children[0];
+            }
+            // arctan(tan(x)) = x
+            if (func == "arctan" && childFunc == "tan")
+            {
+                return children[0].children[0];
+            }
+            // tan(arctan(x)) = x
+            if (func == "tan" && childFunc == "arctan")
+            {
+                return children[0].children[0];
+            }
+        }
+
+        // Simplify nested negations
+        if (func == "neg" && children.Count == 1)
+        {
+            int negCount = 0;
+            FunctionTree current = tree;
+
+            // Count consecutive neg nodes
+            while (current.function.name == "neg" && current.children.Count == 1)
+            {
+                negCount++;
+                current = current.children[0];
+            }
+
+            // If even number of negations, just return the inner node simplified
+            if (negCount % 2 == 0)
+            {
+                return current;
+            }
+            else
+            {
+                // Odd number of negations, return single neg node wrapping simplified inner node
+                return new FunctionTree(new Function("neg")) { children = { current } };
+            }
+        }
+
+        if (func == "sinh" && children.Count == 1)
+        {
+            var x = children[0];
+            var expX = new FunctionTree(new Function("exp"));
+            expX.AddChild(FunctionsOfFunctions.CloneTree(x));
+
+            var negX = new FunctionTree(new Function("neg"));
+            negX.AddChild(FunctionsOfFunctions.CloneTree(x));
+
+            var expNegX = new FunctionTree(new Function("exp"));
+            expNegX.AddChild(negX);
+
+            var numerator = new FunctionTree(new Function("sub"));
+            numerator.AddChild(expX);
+            numerator.AddChild(expNegX);
+
+            var denominator = new FunctionTree(new Function("const2")); // 2
+
+            var result = new FunctionTree(new Function("div"));
+            result.AddChild(numerator);
+            result.AddChild(denominator);
+
+            return StringCompressor(result); // recursively simplify the new tree
+        }
+
+        if (func == "cosh" && children.Count == 1)
+        {
+            var x = children[0];
+            var expX = new FunctionTree(new Function("exp"));
+            expX.AddChild(FunctionsOfFunctions.CloneTree(x));
+
+            var negX = new FunctionTree(new Function("neg"));
+            negX.AddChild(FunctionsOfFunctions.CloneTree(x));
+
+            var expNegX = new FunctionTree(new Function("exp"));
+            expNegX.AddChild(negX);
+
+            var numerator = new FunctionTree(new Function("add"));
+            numerator.AddChild(expX);
+            numerator.AddChild(expNegX);
+
+            var denominator = new FunctionTree(new Function("const2")); // 2
+
+            var result = new FunctionTree(new Function("div"));
+            result.AddChild(numerator);
+            result.AddChild(denominator);
+
+            return StringCompressor(result);
+        }
+
+        if (func == "tanh" && children.Count == 1)
+        {
+            var x = children[0];
+            var expX = new FunctionTree(new Function("exp"));
+            expX.AddChild(FunctionsOfFunctions.CloneTree(x));
+
+            var negX = new FunctionTree(new Function("neg"));
+            negX.AddChild(FunctionsOfFunctions.CloneTree(x));
+
+            var expNegX = new FunctionTree(new Function("exp"));
+            expNegX.AddChild(negX);
+
+            var numerator = new FunctionTree(new Function("sub"));
+            numerator.AddChild(expX);
+            numerator.AddChild(expNegX);
+
+            var denominator = new FunctionTree(new Function("add"));
+            denominator.AddChild(expX);
+            denominator.AddChild(expNegX);
+
+            var result = new FunctionTree(new Function("div"));
+            result.AddChild(numerator);
+            result.AddChild(denominator);
+
+            return StringCompressor(result);
+        }
+
+
         // Handle ln(e) = 1 simplification
         if (func == "ln" && children.Count == 1)
         {
@@ -417,8 +557,6 @@ public static class FunctionTreeStringifier
 
         return tree;
     }
-
-
     private static bool AreTreesEqual(FunctionTree a, FunctionTree b)
     {
         if (a == null || b == null) return false;
