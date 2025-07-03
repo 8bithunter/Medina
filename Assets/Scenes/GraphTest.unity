@@ -143,7 +143,7 @@ MonoBehaviour:
   pointPrefab: {fileID: 280274268}
   inputText: {fileID: 2041729420}
   outputText: {fileID: 1270168433}
-  resolution: 200
+  resolution: 250
 --- !u!114 &146155875 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7539363159218615050, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
@@ -411,11 +411,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1906749092665637525, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.1
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 1906749092665637525, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.1
+      value: 0.025
       objectReference: {fileID: 0}
     - target: {fileID: 2211165318234971578, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
       propertyPath: m_IsActive

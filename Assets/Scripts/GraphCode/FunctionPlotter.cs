@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using ComplexUnity = System.Numerics.Complex;
@@ -13,6 +13,13 @@ public class FunctionPlotter : MonoBehaviour
     private double lastScale = -1;
     private List<GameObject> points = new List<GameObject>();
 
+    private Vector3 dragStart;
+    private Vector3 dragEnd;
+    private bool dragging = false;
+
+    private ComplexUnity inputOffset = ComplexUnity.Zero;
+    private float outputOffset = 0;
+
     void Update()
     {
         // Replot if scale changes
@@ -23,12 +30,39 @@ public class FunctionPlotter : MonoBehaviour
             PlotFunction();
         }
 
-        // Show closest point on mouse hold
-        if (Input.GetMouseButton(0))
+        // Begin dragging
+        if (Input.GetMouseButtonDown(0))
+        {
+            dragStart = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            dragStart.z = 0;
+            dragging = true;
+        }
+
+        // End drag and apply offset
+        if (Input.GetMouseButtonUp(0) && dragging)
+        {
+            dragEnd = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            dragEnd.z = 0;
+            dragging = false;
+
+            Vector3 delta = dragEnd - dragStart;
+
+            // x-movement → shift input: f(z - dx)
+            inputOffset -= new ComplexUnity(delta.x, 0);
+
+            // y-movement → shift output: f(z) + dy
+            outputOffset += delta.y;
+
+            ClearPoints();
+            PlotFunction();
+        }
+
+        // Show closest point only when not dragging
+        if (!dragging && Input.GetMouseButton(0))
         {
             ShowNearestPoint();
         }
-        else
+        else if (!dragging)
         {
             inputText.text = "";
             outputText.text = "";
@@ -37,22 +71,33 @@ public class FunctionPlotter : MonoBehaviour
 
     void PlotFunction()
     {
-        float xMin = (float)(-9);
-        float xMax = (float)(9);
+        float xMin = -9f;
+        float xMax = 9f;
 
         for (int i = 0; i < resolution; i++)
         {
             float t = (float)i / (resolution - 1);
             float x = Mathf.Lerp(xMin, xMax, t);
 
-            ComplexUnity z = new ComplexUnity(x, 0);           // Real input only
-            ComplexUnity result = Funcs.Function(z);           // Evaluate function
-            float y = (float)result.Real;                 // Use imaginary part as output
+            ComplexUnity z = new ComplexUnity(x, 0);
 
-            Vector3 pos = new Vector3(x, y, 0);                // Plot (x, Im[f(x)])
-            GameObject point = Instantiate(pointPrefab, pos, Quaternion.identity);
-            point.transform.SetParent(this.transform);         // Optional: parent under plotter
-            points.Add(point);                                 // Store to delete later
+            // Apply input shift
+            ComplexUnity result = Funcs.Function(z + inputOffset);
+
+            // Apply output shift
+            result += new ComplexUnity(outputOffset, 0);
+
+            ComplexUnity deriv = Funcs.Derivative(z + inputOffset); // use transformed input
+
+            float y = (float)result.Real;
+
+            Vector3 pos = new Vector3(x, y, 0);
+
+            float angle = Mathf.Atan2((float)(deriv.Real * Scaler.scale), 1) * Mathf.Rad2Deg;
+
+            GameObject point = Instantiate(pointPrefab, pos, Quaternion.Euler(0, 0, angle));
+            point.transform.SetParent(this.transform);
+            points.Add(point);
         }
     }
 
