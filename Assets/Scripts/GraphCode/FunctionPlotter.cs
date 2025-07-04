@@ -17,6 +17,8 @@ public class FunctionPlotter : MonoBehaviour
     private Vector3 dragEnd;
     private bool dragging = false;
 
+    public bool invertFunction = false;
+
     private ComplexUnity inputOffset = ComplexUnity.Zero;
     private float outputOffset = 0;
 
@@ -58,14 +60,9 @@ public class FunctionPlotter : MonoBehaviour
         }
 
         // Show closest point only when not dragging
-        if (!dragging && Input.GetMouseButton(0))
+        if (Input.GetMouseButton(1))
         {
             ShowNearestPoint();
-        }
-        else if (!dragging)
-        {
-            inputText.text = "";
-            outputText.text = "";
         }
     }
 
@@ -81,19 +78,41 @@ public class FunctionPlotter : MonoBehaviour
 
             ComplexUnity z = new ComplexUnity(x, 0);
 
-            // Apply input shift
-            ComplexUnity result = Funcs.Function(z + inputOffset);
+            ComplexUnity result;
+            ComplexUnity deriv = 0;
 
-            // Apply output shift
-            result += new ComplexUnity(outputOffset, 0);
+            if (!invertFunction)
+            {
+                // Apply input shift
+                result = Funcs.Function(z + inputOffset);
 
-            ComplexUnity deriv = Funcs.Derivative(z + inputOffset); // use transformed input
+                // Apply output shift
+                result += new ComplexUnity(outputOffset, 0);
+
+                deriv = Funcs.Derivative(z + inputOffset); // use transformed input
+            }
+            else
+            {
+                // Apply input shift
+                result = Funcs.Function(z - outputOffset);
+
+                // Apply output shift
+                result += new ComplexUnity(-inputOffset.Real, 0);
+
+                deriv = Funcs.Derivative(z - outputOffset); // use transformed input
+            }
 
             float y = (float)result.Real;
 
             Vector3 pos = new Vector3(x, y, 0);
 
             float angle = Mathf.Atan2((float)(deriv.Real * Scaler.scale), 1) * Mathf.Rad2Deg;
+
+            if(invertFunction)
+            {
+                pos = new Vector3(y, x, 0);
+                angle = 90 - angle;
+            }
 
             GameObject point = Instantiate(pointPrefab, pos, Quaternion.Euler(0, 0, angle));
             point.transform.SetParent(this.transform);
