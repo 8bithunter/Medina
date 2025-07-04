@@ -104,6 +104,9 @@ public class FunctionPlotter : MonoBehaviour
 
             float y = (float)result.Real;
 
+            if (Mathf.Abs(y) > 1000000) y = 1000000;
+            if (Mathf.Abs(x) > 1000000) x = 1000000;
+
             Vector3 pos = new Vector3(x, y, 0);
 
             float angle = Mathf.Atan2((float)(deriv.Real * Scaler.scale), 1) * Mathf.Rad2Deg;
