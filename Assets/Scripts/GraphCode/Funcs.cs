@@ -33,7 +33,7 @@ public class Funcs : MonoBehaviour
 
             //Change the right side of the following assignment to your desired function using "z" as your variable
             //eg. Complex output = Complex.Sin(z) + Complex.Pow(z, 3) + z;
-            output = Complex.Sin(z);
+            output = Complex.Pow(z, z);
             //output = Complex.Tan((CreateSymmetry(z, symmetryNumber)));
 
         return output / Scaler.scale;

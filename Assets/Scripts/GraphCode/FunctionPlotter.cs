@@ -59,7 +59,7 @@ public class FunctionPlotter : MonoBehaviour
             PlotFunction();
         }
 
-        // Show closest point only when not dragging
+        // Show closest point only when not draggawing
         if (Input.GetMouseButton(1))
         {
             ShowNearestPoint();
@@ -150,7 +150,17 @@ public class FunctionPlotter : MonoBehaviour
         }
 
         Vector3 coord = closest.transform.position;
-        inputText.text = $"{coord.x * Scaler.scale:0.000}";
-        outputText.text = $"{coord.y * Scaler.scale: 0.000}";
+
+        if (!invertFunction)
+        {
+            inputText.text = $"{(coord.x + inputOffset.Real) * Scaler.scale:0.000}";
+            outputText.text = $"{(coord.y + outputOffset) * Scaler.scale: 0.000}";
+        }
+        else
+        {
+            inputText.text = $"{(coord.x + outputOffset) * Scaler.scale:0.000}";
+            outputText.text = $"{(coord.y + inputOffset.Real) * Scaler.scale: 0.000}";
+        }
+        
     }
 }
