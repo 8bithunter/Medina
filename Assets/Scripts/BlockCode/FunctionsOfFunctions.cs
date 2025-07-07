@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Numerics;
 using UnityEngine;
 
@@ -339,7 +340,7 @@ public static class FunctionsOfFunctions
             return result;
         }
 
-                // arcsin(f)
+        // arcsin(f)
         if (func == "arcsin" && children.Count == 1)
         {
             var f = children[0];
@@ -528,6 +529,130 @@ public static class FunctionsOfFunctions
             clone.AddChild(CloneTree(child));
         }
         return clone;
+    }
+
+    public static double Evaluate(FunctionTree tree, double x)
+    {
+        if (tree == null || tree.function == null)
+            throw new ArgumentException("FunctionTree or Function is null");
+
+        string func = tree.function.name.ToLower();
+        var children = tree.children;
+
+        // Constants
+        if (func.StartsWith("const"))
+        {
+            string val = func.Substring(5);
+            if (val == "pi") return Math.PI;
+            if (val == "e") return Math.E;
+            return double.Parse(val, CultureInfo.InvariantCulture);
+        }
+
+        // Negative constant like neg_e
+        if (func.StartsWith("neg_"))
+        {
+            string val = func.Substring(4);
+            if (val == "pi") return -Math.PI;
+            if (val == "e") return -Math.E;
+            return -double.Parse(val, CultureInfo.InvariantCulture);
+        }
+
+        // Variable
+        if (func == "var")
+            return x;
+
+        // Negation
+        if (func == "neg" && children.Count == 1)
+            return -Evaluate(children[0], x);
+
+        // Binary operators
+        if (func == "add" && children.Count == 2)
+            return Evaluate(children[0], x) + Evaluate(children[1], x);
+
+        if (func == "sub" && children.Count == 2)
+            return Evaluate(children[0], x) - Evaluate(children[1], x);
+
+        if (func == "mul" && children.Count == 2)
+            return Evaluate(children[0], x) * Evaluate(children[1], x);
+
+        if (func == "div" && children.Count == 2)
+        {
+            double denom = Evaluate(children[1], x);
+            if (denom == 0) throw new DivideByZeroException();
+            return Evaluate(children[0], x) / denom;
+        }
+
+        if (func == "pow" && children.Count == 2)
+            return Math.Pow(Evaluate(children[0], x), Evaluate(children[1], x));
+
+        // Unary functions
+        if (func == "sin" && children.Count == 1)
+            return Math.Sin(Evaluate(children[0], x));
+
+        if (func == "cos" && children.Count == 1)
+            return Math.Cos(Evaluate(children[0], x));
+
+        if (func == "tan" && children.Count == 1)
+            return Math.Tan(Evaluate(children[0], x));
+
+        if (func == "exp" && children.Count == 1)
+            return Math.Exp(Evaluate(children[0], x));
+
+        if (func == "ln" && children.Count == 1)
+        {
+            double inner = Evaluate(children[0], x);
+            if (inner <= 0) throw new ArgumentException("ln domain error: input <= 0");
+            return Math.Log(inner);
+        }
+
+        if (func == "abs" && children.Count == 1)
+            return Math.Abs(Evaluate(children[0], x));
+
+        if (func == "sec" && children.Count == 1)
+            return 1.0 / Math.Cos(Evaluate(children[0], x));
+
+        if (func == "csc" && children.Count == 1)
+            return 1.0 / Math.Sin(Evaluate(children[0], x));
+
+        if (func == "cot" && children.Count == 1)
+            return 1.0 / Math.Tan(Evaluate(children[0], x));
+
+        if (func == "arcsin" && children.Count == 1)
+            return Math.Asin(Evaluate(children[0], x));
+
+        if (func == "arccos" && children.Count == 1)
+            return Math.Acos(Evaluate(children[0], x));
+
+        if (func == "arctan" && children.Count == 1)
+            return Math.Atan(Evaluate(children[0], x));
+
+        if (func == "arccot" && children.Count == 1)
+            return Math.PI / 2 - Math.Atan(Evaluate(children[0], x));
+
+        if (func == "arcsec" && children.Count == 1)
+        {
+            double val = Evaluate(children[0], x);
+            if (Math.Abs(val) < 1e-8) throw new ArgumentException("arcsec domain error");
+            return Math.Acos(1.0 / val);
+        }
+
+        if (func == "arccsc" && children.Count == 1)
+        {
+            double val = Evaluate(children[0], x);
+            if (Math.Abs(val) < 1e-8) throw new ArgumentException("arccsc domain error");
+            return Math.Asin(1.0 / val);
+        }
+
+        if (func == "sinh" && children.Count == 1)
+            return Math.Sinh(Evaluate(children[0], x));
+
+        if (func == "cosh" && children.Count == 1)
+            return Math.Cosh(Evaluate(children[0], x));
+
+        if (func == "tanh" && children.Count == 1)
+            return Math.Tanh(Evaluate(children[0], x));
+
+        throw new NotImplementedException($"Function '{func}' is not supported in evaluator.");
     }
 
 }
