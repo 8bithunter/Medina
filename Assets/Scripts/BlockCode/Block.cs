@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Block : MonoBehaviour
 {
@@ -16,8 +17,8 @@ public class Block : MonoBehaviour
     {
         CallEveryFrame();
 
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
-        rb.freezeRotation = true; // Freezes Z rotation
+        //Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        //rb.freezeRotation = true; // Freezes Z rotation
     }
 
     void Update()
@@ -27,13 +28,13 @@ public class Block : MonoBehaviour
 
     public void CallEveryFrame()
     {
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        spriteRenderer.color = color;
+        Image image = GetComponent<Image>();
+        image.color = color;
     }
 
 
 
-    public List<Block> connectedAbove = new List<Block>();
+    /*public List<Block> connectedAbove = new List<Block>();
     public List<Block> connectedBelow = new List<Block>();
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -136,5 +137,5 @@ public class Block : MonoBehaviour
         {
             CollectBelow(below, visited);
         }
-    }
+    } */
 }

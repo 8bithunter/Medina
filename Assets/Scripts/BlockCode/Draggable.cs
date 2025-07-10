@@ -22,7 +22,7 @@ public class Draggable : MonoBehaviour
         // block.DisconnectAllConnections();
 
         // Get all blocks connected below this one (including self)
-        draggingBlocks = block.GetBlocksBelowRecursive();
+        //draggingBlocks = block.GetBlocksBelowRecursive();
 
         offset = transform.position - GetMouseWorldPos();
         isDragging = true;

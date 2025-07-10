@@ -13,8 +13,7 @@ public class TestFunctions : MonoBehaviour
         try
         {
             // 1. Parse
-            var parser = new FunctionParser();
-            FunctionTree tree = parser.Parse(inputExpression);
+            FunctionTree tree = FunctionParser.Parse(inputExpression);
             tree = FunctionTreeStringifier.StringCompressor(tree);
 
             // 2. Differentiate

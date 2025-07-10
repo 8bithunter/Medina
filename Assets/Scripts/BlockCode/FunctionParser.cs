@@ -3,20 +3,20 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class FunctionParser
+static public class FunctionParser
 {
-    private string input;
-    private int pos;
-    private char Current => pos < input.Length ? input[pos] : '\0';
+    static private string input;
+    static private int pos;
+    static private char Current => pos < input.Length ? input[pos] : '\0';
 
-    public FunctionTree Parse(string expr)
+    static public FunctionTree Parse(string expr)
     {
         input = expr.Replace(" ", "").ToLower();
         pos = 0;
         return ParseExpression();
     }
 
-    private FunctionTree ParseExpression()
+    static private FunctionTree ParseExpression()
     {
         var node = ParseTerm();
         while (Current == '+' || Current == '-')
@@ -33,7 +33,7 @@ public class FunctionParser
         return node;
     }
 
-    private FunctionTree ParseTerm()
+    static private FunctionTree ParseTerm()
     {
         var node = ParseFactor();
         while (Current == '*' || Current == '/')
@@ -50,7 +50,7 @@ public class FunctionParser
         return node;
     }
 
-    private FunctionTree ParseFactor()
+    static private FunctionTree ParseFactor()
     {
         var node = ParseUnary();
         while (Current == '^')
@@ -65,7 +65,7 @@ public class FunctionParser
         return node;
     }
 
-    private FunctionTree ParseUnary()
+    static private FunctionTree ParseUnary()
     {
         if (Current == '-')
         {
@@ -80,7 +80,7 @@ public class FunctionParser
         return ParseAtom();
     }
 
-    private FunctionTree ParseAtom()
+    static private FunctionTree ParseAtom()
     {
         if (Current == '(')
         {
@@ -132,21 +132,21 @@ public class FunctionParser
         throw new Exception("Unexpected character: " + Current);
     }
 
-    private string ParseIdentifier()
+    static private string ParseIdentifier()
     {
         int start = pos;
         while (char.IsLetter(Current)) pos++;
         return input.Substring(start, pos - start);
     }
 
-    private string ParseNumber()
+    static private string ParseNumber()
     {
         int start = pos;
         while (char.IsDigit(Current) || Current == '.') pos++;
         return input.Substring(start, pos - start);
     }
 
-    private void Expect(char c)
+    static private void Expect(char c)
     {
         if (Current != c)
             throw new Exception($"Expected '{c}', found '{Current}'");
