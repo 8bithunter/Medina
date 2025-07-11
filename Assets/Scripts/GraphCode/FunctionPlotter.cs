@@ -3,13 +3,18 @@ using UnityEngine;
 using TMPro;
 using ComplexUnity = System.Numerics.Complex;
 using System.Numerics;
+using System;
 
 public class FunctionPlotter : MonoBehaviour
 {
     public GameObject pointPrefab;
     public TMP_Text inputText;
     public TMP_Text outputText;
+    public TMP_Text text;
     public int resolution = 100;
+
+    private float timer = 0f;
+    public float interval = 0.2f;
 
     private double lastScale = -1;
     private List<GameObject> points = new List<GameObject>();
@@ -64,6 +69,17 @@ public class FunctionPlotter : MonoBehaviour
         if (Input.GetMouseButton(1))
         {
             ShowNearestPoint();
+        }
+
+        timer += Time.deltaTime;
+
+        if (timer >= interval)
+        {
+            timer -= interval;
+            ClearPoints();
+            PlotFunction();
+
+            text.text = "(" + Math.Round(inputOffset.Real * Scaler.scale, 3) + ", " + Math.Round(-(double)outputOffset * Scaler.scale, 3) + ")";
         }
     }
 
@@ -169,12 +185,12 @@ public class FunctionPlotter : MonoBehaviour
         if (!invertFunction)
         {
             inputText.text = $"{(coord.x + inputOffset.Real) * Scaler.scale:0.000}";
-            outputText.text = $"{(coord.y + outputOffset) * Scaler.scale: 0.000}";
+            outputText.text = $"{(coord.y - outputOffset) * Scaler.scale: 0.000}";
         }
         else
         {
-            inputText.text = $"{(coord.x + outputOffset) * Scaler.scale:0.000}";
-            outputText.text = $"{(coord.y + inputOffset.Real) * Scaler.scale: 0.000}";
+            inputText.text = $"{(coord.x + inputOffset.Real) * Scaler.scale:0.000}";
+            outputText.text = $"{(coord.y - outputOffset) * Scaler.scale: 0.000}";
         }
         
     }
