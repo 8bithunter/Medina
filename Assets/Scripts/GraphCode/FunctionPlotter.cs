@@ -11,6 +11,7 @@ public class FunctionPlotter : MonoBehaviour
     public TMP_Text inputText;
     public TMP_Text outputText;
     public TMP_Text text;
+    public Transform originDot;
     public int resolution = 100;
 
     private float timer = 0f;
@@ -80,6 +81,7 @@ public class FunctionPlotter : MonoBehaviour
             PlotFunction();
 
             text.text = "(" + Math.Round(inputOffset.Real * Scaler.scale, 3) + ", " + Math.Round(-(double)outputOffset * Scaler.scale, 3) + ")";
+            originDot.position = new UnityEngine.Vector3(-(float)inputOffset.Real, outputOffset, 0);
         }
     }
 
