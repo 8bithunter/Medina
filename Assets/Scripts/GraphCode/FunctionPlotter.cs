@@ -14,32 +14,24 @@ public class FunctionPlotter : MonoBehaviour
     public Transform originDot;
     public int resolution = 100;
 
-    private float timer = 0f;
-    public float interval = 0.2f;
-
-    private double lastScale = -1;
     private List<GameObject> points = new List<GameObject>();
 
     private UnityEngine.Vector3 dragStart;
-    private UnityEngine.Vector3 dragEnd;
     private bool dragging = false;
 
     public bool invertFunction = false;
 
+    // Use the same offsets as your grid (make these public or link from Scaler if needed)
     private ComplexUnity inputOffset = ComplexUnity.Zero;
     private float outputOffset = 0;
 
+    private double lastScale = -1;
+
     void Update()
     {
-        // Replot if scale changes
-        if (Scaler.scale != lastScale)
-        {
-            lastScale = Scaler.scale;
-            ClearPoints();
-            PlotFunction();
-        }
+        bool shouldReplot = false;
 
-        // Begin dragging
+        // Handle drag start
         if (Input.GetMouseButtonDown(0))
         {
             dragStart = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -47,48 +39,59 @@ public class FunctionPlotter : MonoBehaviour
             dragging = true;
         }
 
-        // End drag and apply offset
-        if (Input.GetMouseButtonUp(0) && dragging)
+        // Handle drag move - update offsets dynamically
+        if (dragging && Input.GetMouseButton(0))
         {
-            dragEnd = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            dragEnd.z = 0;
-            dragging = false;
+            UnityEngine.Vector3 current = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            current.z = 0;
+            UnityEngine.Vector3 delta = current - dragStart;
+            dragStart = current;
 
-            UnityEngine.Vector3 delta = dragEnd - dragStart;
-
-            // x-movement → shift input: f(z - dx)
+            // Match your grid behavior: inputOffset += delta.x, outputOffset += delta.y (Desmos style)
             inputOffset -= new ComplexUnity(delta.x, 0);
-
-            // y-movement → shift output: f(z) + dy
             outputOffset += delta.y;
 
-            ClearPoints();
-            PlotFunction();
+            shouldReplot = true;
         }
 
-        // Show closest point only when not draggawing
+        // Handle drag end
+        if (Input.GetMouseButtonUp(0))
+        {
+            dragging = false;
+        }
+
+        // Handle zoom change (compare with last scale)
+        if (Scaler.scale != lastScale)
+        {
+            lastScale = Scaler.scale;
+            shouldReplot = true;
+        }
+
+        // Replot if needed
+        if (shouldReplot)
+        {
+            ClearPoints();
+            PlotFunction();
+
+            // Update coordinates text and origin dot position live
+            originDot.position = new UnityEngine.Vector3(-(float)inputOffset.Real, outputOffset, 0);
+        }
+
+        // Show nearest point only while holding right mouse button (optional)
         if (Input.GetMouseButton(1))
         {
             ShowNearestPoint();
-        }
-
-        timer += Time.deltaTime;
-
-        if (timer >= interval)
-        {
-            timer -= interval;
-            ClearPoints();
-            PlotFunction();
-
-            text.text = "(" + Math.Round(inputOffset.Real * Scaler.scale, 3) + ", " + Math.Round(-(double)outputOffset * Scaler.scale, 3) + ")";
-            originDot.position = new UnityEngine.Vector3(-(float)inputOffset.Real, outputOffset, 0);
         }
     }
 
     void PlotFunction()
     {
-        float xMin = -9f;
-        float xMax = 9f;
+        // Optional: limit x-range to visible area to optimize performance
+        Camera cam = Camera.main;
+        UnityEngine.Vector3 bottomLeft = cam.ScreenToWorldPoint(new UnityEngine.Vector3(0, 0, 0));
+        UnityEngine.Vector3 topRight = cam.ScreenToWorldPoint(new UnityEngine.Vector3(Screen.width, Screen.height, 0));
+        float xMin = bottomLeft.x;
+        float xMax = topRight.x;
 
         for (int i = 0; i < resolution; i++)
         {
@@ -100,65 +103,64 @@ public class FunctionPlotter : MonoBehaviour
             ComplexUnity result;
             ComplexUnity deriv = 0;
 
-            GraphStackInterpreter blockParser = new GraphStackInterpreter();
+            // Parse the function once outside loop for efficiency if possible
+            // For demonstration, keeping inside loop (replace with caching in production)
+            var parsedFunction = FunctionParser.Parse(GraphStackInterpreter.inputFunction);
 
             if (!invertFunction)
             {
-                // Apply input shift
-                result = FunctionsOfFunctions.Evaluate(FunctionParser.Parse(GraphStackInterpreter.inputFunction), (z + inputOffset).Real * Scaler.scale) / Scaler.scale;
+                // Apply input offset and scale
+                double shiftedInput = (z + inputOffset).Real * Scaler.scale;
+                result = FunctionsOfFunctions.Evaluate(parsedFunction, shiftedInput) / Scaler.scale;
 
-                // Apply output shift
+                // Apply output offset
                 result += new ComplexUnity(outputOffset, 0);
 
-                deriv = Derivative(FunctionParser.Parse(GraphStackInterpreter.inputFunction), (z + inputOffset).Real * Scaler.scale);
+                deriv = Derivative(parsedFunction, shiftedInput);
             }
             else
             {
-                // Apply input shift
-                result = FunctionsOfFunctions.Evaluate(FunctionParser.Parse(GraphStackInterpreter.inputFunction), (z - outputOffset).Real * Scaler.scale) / Scaler.scale;
-
-                // Apply output shift
+                double shiftedInput = (z - outputOffset).Real * Scaler.scale;
+                result = FunctionsOfFunctions.Evaluate(parsedFunction, shiftedInput) / Scaler.scale;
                 result += new ComplexUnity(-inputOffset.Real, 0);
 
-                deriv = Derivative(FunctionParser.Parse(GraphStackInterpreter.inputFunction), (z - outputOffset).Real * Scaler.scale);
+                deriv = Derivative(parsedFunction, shiftedInput);
             }
 
-                float y = (float)result.Real;
+            float y = (float)result.Real;
 
-                if (Mathf.Abs(y) > 1000000) y = 1000000;
-                if (Mathf.Abs(x) > 1000000) x = 1000000;
+            // Clamp huge values for stability
+            y = Mathf.Clamp(y, -1000000f, 1000000f);
+            x = Mathf.Clamp(x, -1000000f, 1000000f);
 
-                UnityEngine.Vector3 pos = new UnityEngine.Vector3(x, y, 0);
+            UnityEngine.Vector3 pos = new UnityEngine.Vector3(x, y, 0);
 
-                float angle = Mathf.Atan2((float)(deriv.Real) * (float)Scaler.scale, 1) * Mathf.Rad2Deg;
+            float angle = Mathf.Atan2((float)(deriv.Real) * (float)Scaler.scale, 1) * Mathf.Rad2Deg;
 
-                if (invertFunction)
-                {
-                    pos = new UnityEngine.Vector3(y, x, 0);
-                    angle = 90 - angle;
-                }
+            if (invertFunction)
+            {
+                pos = new UnityEngine.Vector3(y, x, 0);
+                angle = 90 - angle;
+            }
 
-                GameObject point = Instantiate(pointPrefab, pos, UnityEngine.Quaternion.Euler(0, 0, angle));
-                point.transform.SetParent(this.transform);
-                points.Add(point);
+            GameObject point = Instantiate(pointPrefab, pos, UnityEngine.Quaternion.Euler(0, 0, angle));
+            point.transform.SetParent(this.transform);
+            points.Add(point);
         }
     }
 
-    public static Complex Derivative(FunctionTree functionTree, Complex z)
+    public static Complex Derivative(FunctionTree functionTree, double x)
     {
-        double dx = 0.00000001;
-        Complex fz_plus_h = FunctionsOfFunctions.Evaluate(functionTree, (z + new Complex(dx, 0)).Real);
-        Complex fz_minus_h = FunctionsOfFunctions.Evaluate(functionTree, (z - new Complex(dx, 0)).Real);
-
-        return ((fz_plus_h - fz_minus_h) / (2 * dx)) / Scaler.scale;
+        double dx = 1e-8;
+        Complex fz_plus_h = FunctionsOfFunctions.Evaluate(functionTree, x + dx);
+        Complex fz_minus_h = FunctionsOfFunctions.Evaluate(functionTree, x - dx);
+        return (fz_plus_h - fz_minus_h) / (2 * dx) / Scaler.scale;
     }
 
     void ClearPoints()
     {
-        foreach (GameObject point in points)
-        {
+        foreach (var point in points)
             Destroy(point);
-        }
         points.Clear();
     }
 
@@ -184,16 +186,7 @@ public class FunctionPlotter : MonoBehaviour
 
         UnityEngine.Vector3 coord = closest.transform.position;
 
-        if (!invertFunction)
-        {
-            inputText.text = $"{(coord.x + inputOffset.Real) * Scaler.scale:0.000}";
-            outputText.text = $"{(coord.y - outputOffset) * Scaler.scale: 0.000}";
-        }
-        else
-        {
-            inputText.text = $"{(coord.x + inputOffset.Real) * Scaler.scale:0.000}";
-            outputText.text = $"{(coord.y - outputOffset) * Scaler.scale: 0.000}";
-        }
-        
+        inputText.text = $"{(coord.x + inputOffset.Real) * Scaler.scale:0.000}";
+        outputText.text = $"{(coord.y - outputOffset) * Scaler.scale:0.000}";
     }
 }
