@@ -586,11 +586,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &399730344 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2694326716016415419, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
-  m_PrefabInstance: {fileID: 847692291}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &429684273
 GameObject:
   m_ObjectHideFlags: 0
@@ -1754,6 +1749,8 @@ PrefabInstance:
     - {fileID: 4308672112501992576, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
     - {fileID: 644092331578053435, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
     - {fileID: 8335563545652776470, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
+    - {fileID: 2694326716016415419, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
+    - {fileID: 4912082239885715540, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 1729516316766175106, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
       insertIndex: -1
@@ -2062,7 +2059,7 @@ PrefabInstance:
     - target: {fileID: 2002362933759077643, guid: efb31345acc9a994895735b601f14e05, type: 3}
       propertyPath: squarePrefab
       value: 
-      objectReference: {fileID: 399730344}
+      objectReference: {fileID: 0}
     - target: {fileID: 3036721800656148512, guid: efb31345acc9a994895735b601f14e05, type: 3}
       propertyPath: matrixMode
       value: 0
@@ -2158,7 +2155,7 @@ PrefabInstance:
     - target: {fileID: 6779976277195361050, guid: efb31345acc9a994895735b601f14e05, type: 3}
       propertyPath: squarePrefab
       value: 
-      objectReference: {fileID: 399730344}
+      objectReference: {fileID: 4385752747759093516, guid: 667d01574486bd049ac143065189b109, type: 3}
     - target: {fileID: 8901894760494232886, guid: efb31345acc9a994895735b601f14e05, type: 3}
       propertyPath: m_Enabled
       value: 0

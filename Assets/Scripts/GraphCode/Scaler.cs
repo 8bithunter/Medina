@@ -137,7 +137,7 @@ public class Scaler : MonoBehaviour
             bool isAxis = Math.Abs(gx) < 1e-6;
 
             CreateLine(worldX, 0, isVertical: true, isAxis);
-            CreateLabel(worldX, yOffset, gx, true, isAxis);
+            CreateLabel(worldX - 0.15f, yOffset, gx, true, isAxis);
         }
 
         // Horizontal lines and Y-axis labels
@@ -147,7 +147,7 @@ public class Scaler : MonoBehaviour
             bool isAxis = Math.Abs(gy) < 1e-6;
 
             CreateLine(0, worldY, isVertical: false, isAxis);
-            CreateLabel(xOffset, worldY, gy, false, isAxis);
+            CreateLabel(xOffset, worldY - 0.15f, gy, false, isAxis);
         }
     }
 
