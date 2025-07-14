@@ -531,7 +531,7 @@ public static class FunctionsOfFunctions
         return clone;
     }
 
-    public static double Evaluate(FunctionTree tree, double x)
+    public static Complex Evaluate(FunctionTree tree, double x)
     {
         if (tree == null || tree.function == null)
             throw new ArgumentException("FunctionTree or Function is null");
@@ -563,94 +563,93 @@ public static class FunctionsOfFunctions
 
         // Negation
         if (func == "neg" && children.Count == 1)
-            return -Evaluate(children[0], x);
+            return -Evaluate(children[0], x).Real;
 
         // Binary operators
         if (func == "add" && children.Count == 2)
-            return Evaluate(children[0], x) + Evaluate(children[1], x);
+            return Evaluate(children[0], x) + Evaluate(children[1], x).Real;
 
         if (func == "sub" && children.Count == 2)
-            return Evaluate(children[0], x) - Evaluate(children[1], x);
+            return Evaluate(children[0], x) - Evaluate(children[1], x).Real;
 
         if (func == "mul" && children.Count == 2)
-            return Evaluate(children[0], x) * Evaluate(children[1], x);
+            return Evaluate(children[0], x) * Evaluate(children[1], x).Real;
 
         if (func == "div" && children.Count == 2)
         {
-            double denom = Evaluate(children[1], x);
+            double denom = Evaluate(children[1], x).Real;
             if (denom == 0) throw new DivideByZeroException();
             return Evaluate(children[0], x) / denom;
         }
 
         if (func == "pow" && children.Count == 2)
-            return Math.Pow(Evaluate(children[0], x), Evaluate(children[1], x));
+            return (Complex.Pow(Evaluate(children[0], x).Real, Evaluate(children[1], x).Real));
 
         // Unary functions
         if (func == "sin" && children.Count == 1)
-            return Math.Sin(Evaluate(children[0], x));
+            return Complex.Sin(Evaluate(children[0], x).Real);
 
         if (func == "cos" && children.Count == 1)
-            return Math.Cos(Evaluate(children[0], x));
+            return Complex.Cos(Evaluate(children[0], x).Real);
 
         if (func == "tan" && children.Count == 1)
-            return Math.Tan(Evaluate(children[0], x));
+            return Complex.Tan(Evaluate(children[0], x).Real);
 
         if (func == "exp" && children.Count == 1)
-            return Math.Exp(Evaluate(children[0], x));
+            return Complex.Exp(Evaluate(children[0], x).Real);
 
         if (func == "ln" && children.Count == 1)
         {
-            double inner = Evaluate(children[0], x);
-            if (inner <= 0) throw new ArgumentException("ln domain error: input <= 0");
-            return Math.Log(inner);
+            double inner = Evaluate(children[0], x).Real;
+            return Complex.Log(inner);
         }
 
         if (func == "abs" && children.Count == 1)
-            return Math.Abs(Evaluate(children[0], x));
+            return Complex.Abs(Evaluate(children[0], x).Real);
 
         if (func == "sec" && children.Count == 1)
-            return 1.0 / Math.Cos(Evaluate(children[0], x));
+            return 1.0 / Complex.Cos(Evaluate(children[0], x).Real);
 
         if (func == "csc" && children.Count == 1)
-            return 1.0 / Math.Sin(Evaluate(children[0], x));
+            return 1.0 / Complex.Sin(Evaluate(children[0], x).Real);
 
         if (func == "cot" && children.Count == 1)
-            return 1.0 / Math.Tan(Evaluate(children[0], x));
+            return 1.0 / Complex.Tan(Evaluate(children[0], x).Real);
 
         if (func == "arcsin" && children.Count == 1)
-            return Math.Asin(Evaluate(children[0], x));
+            return Complex.Asin(Evaluate(children[0], x).Real);
 
         if (func == "arccos" && children.Count == 1)
-            return Math.Acos(Evaluate(children[0], x));
+            return Complex.Acos(Evaluate(children[0], x).Real);
 
         if (func == "arctan" && children.Count == 1)
-            return Math.Atan(Evaluate(children[0], x));
+            return Complex.Atan(Evaluate(children[0], x).Real);
 
         if (func == "arccot" && children.Count == 1)
-            return Math.PI / 2 - Math.Atan(Evaluate(children[0], x));
+            return Math.PI / 2 - Complex.Atan(Evaluate(children[0], x).Real);
 
         if (func == "arcsec" && children.Count == 1)
         {
-            double val = Evaluate(children[0], x);
-            if (Math.Abs(val) < 1e-8) throw new ArgumentException("arcsec domain error");
-            return Math.Acos(1.0 / val);
+            double val = Evaluate(children[0], x).Real;
+            if (Complex.Abs(val) < 1e-8) throw new ArgumentException("arcsec domain error");
+            return Complex.Acos(1.0 / val);
         }
 
         if (func == "arccsc" && children.Count == 1)
         {
-            double val = Evaluate(children[0], x);
-            if (Math.Abs(val) < 1e-8) throw new ArgumentException("arccsc domain error");
-            return Math.Asin(1.0 / val);
+            double val = Evaluate(children[0], x).Real;
+            if (Complex.Abs(val) < 1e-8) throw new ArgumentException("arccsc domain error");
+            return Complex.Asin(1.0 / val);
         }
 
         if (func == "sinh" && children.Count == 1)
-            return Math.Sinh(Evaluate(children[0], x));
+            return Complex.Sinh(Evaluate(children[0], x).Real);
 
         if (func == "cosh" && children.Count == 1)
-            return Math.Cosh(Evaluate(children[0], x));
+            return Complex.Cosh(Evaluate(children[0], x).Real);
 
         if (func == "tanh" && children.Count == 1)
-            return Math.Tanh(Evaluate(children[0], x));
+            return Complex.Tanh(Evaluate(children[0], x).Real  );
 
         throw new NotImplementedException($"Function '{func}' is not supported in evaluator.");
     }

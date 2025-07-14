@@ -24,15 +24,15 @@ public class TestFunctions : MonoBehaviour
             string derivativeStr = FunctionTreeStringifier.ToReadableString(derivative);
 
             // 4. Evaluate
-            double originalVal = FunctionsOfFunctions.Evaluate(tree, xValue);
-            double derivativeVal = FunctionsOfFunctions.Evaluate(derivative, xValue);
+            //double originalVal = FunctionsOfFunctions.Evaluate(tree, xValue);
+            //double derivativeVal = FunctionsOfFunctions.Evaluate(derivative, xValue);
 
             // 5. Output
             Debug.Log("Input Expression:     " + originalStr);
             Debug.Log("Derivative Expression:" + derivativeStr);
             Debug.Log($"Value at x = {xValue}:");
-            Debug.Log("   Original: " + originalVal);
-            Debug.Log("   Derivative: " + derivativeVal);
+            //Debug.Log("   Original: " + originalVal);
+            //Debug.Log("   Derivative: " + derivativeVal);
         }
         catch (Exception ex)
         {
