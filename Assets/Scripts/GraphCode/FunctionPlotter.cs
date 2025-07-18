@@ -13,15 +13,17 @@ public class FunctionPlotter : MonoBehaviour
     public TMP_Text text;
     public Transform originDot;
     public int resolution = 100;
+    public Material solidLineMaterial;
+    public Material dottedLineMaterial;
 
     private List<GameObject> points = new List<GameObject>();
+    private LineRenderer lineRenderer;
 
     private UnityEngine.Vector3 dragStart;
     private bool dragging = false;
 
     public bool invertFunction = false;
 
-    // Use the same offsets as your grid (make these public or link from Scaler if needed)
     private ComplexUnity inputOffset = ComplexUnity.Zero;
     private float outputOffset = 0;
 
@@ -31,7 +33,6 @@ public class FunctionPlotter : MonoBehaviour
     {
         bool shouldReplot = false;
 
-        // Handle drag start
         if (Input.GetMouseButtonDown(0))
         {
             dragStart = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -39,7 +40,6 @@ public class FunctionPlotter : MonoBehaviour
             dragging = true;
         }
 
-        // Handle drag move - update offsets dynamically
         if (dragging && Input.GetMouseButton(0))
         {
             UnityEngine.Vector3 current = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -47,37 +47,30 @@ public class FunctionPlotter : MonoBehaviour
             UnityEngine.Vector3 delta = current - dragStart;
             dragStart = current;
 
-            // Match your grid behavior: inputOffset += delta.x, outputOffset += delta.y (Desmos style)
             inputOffset -= new ComplexUnity(delta.x, 0);
             outputOffset += delta.y;
 
             shouldReplot = true;
         }
 
-        // Handle drag end
         if (Input.GetMouseButtonUp(0))
         {
             dragging = false;
         }
 
-        // Handle zoom change (compare with last scale)
         if (Scaler.scale != lastScale)
         {
             lastScale = Scaler.scale;
             shouldReplot = true;
         }
 
-        // Replot if needed
         if (shouldReplot)
         {
             ClearPoints();
             PlotFunction();
-
-            // Update coordinates text and origin dot position live
             originDot.position = new UnityEngine.Vector3(-(float)inputOffset.Real, outputOffset, 0);
         }
 
-        // Show nearest point only while holding right mouse button (optional)
         if (Input.GetMouseButton(1))
         {
             ShowNearestPoint();
@@ -86,7 +79,6 @@ public class FunctionPlotter : MonoBehaviour
 
     void PlotFunction()
     {
-        // Optional: limit x-range to visible area to optimize performance
         Camera cam = Camera.main;
         UnityEngine.Vector3 bottomLeft = cam.ScreenToWorldPoint(new UnityEngine.Vector3(0, 0, 0));
         UnityEngine.Vector3 topRight = cam.ScreenToWorldPoint(new UnityEngine.Vector3(Screen.width, Screen.height, 0));
@@ -99,23 +91,16 @@ public class FunctionPlotter : MonoBehaviour
             float x = Mathf.Lerp(xMin, xMax, t);
 
             ComplexUnity z = new ComplexUnity(x, 0);
-
             ComplexUnity result;
             ComplexUnity deriv = 0;
 
-            // Parse the function once outside loop for efficiency if possible
-            // For demonstration, keeping inside loop (replace with caching in production)
             var parsedFunction = FunctionParser.Parse(GraphStackInterpreter.inputFunction);
 
             if (!invertFunction)
             {
-                // Apply input offset and scale
                 double shiftedInput = (z + inputOffset).Real * Scaler.scale;
                 result = FunctionsOfFunctions.Evaluate(parsedFunction, shiftedInput) / Scaler.scale;
-
-                // Apply output offset
                 result += new ComplexUnity(outputOffset, 0);
-
                 deriv = Derivative(parsedFunction, shiftedInput);
             }
             else
@@ -123,18 +108,15 @@ public class FunctionPlotter : MonoBehaviour
                 double shiftedInput = (z - outputOffset).Real * Scaler.scale;
                 result = FunctionsOfFunctions.Evaluate(parsedFunction, shiftedInput) / Scaler.scale;
                 result += new ComplexUnity(-inputOffset.Real, 0);
-
                 deriv = Derivative(parsedFunction, shiftedInput);
             }
 
             float y = (float)result.Real;
 
-            // Clamp huge values for stability
             y = Mathf.Clamp(y, -1000000f, 1000000f);
             x = Mathf.Clamp(x, -1000000f, 1000000f);
 
             UnityEngine.Vector3 pos = new UnityEngine.Vector3(x, y, 0);
-
             float angle = Mathf.Atan2((float)(deriv.Real) * (float)Scaler.scale, 1) * Mathf.Rad2Deg;
 
             if (invertFunction)
@@ -146,6 +128,26 @@ public class FunctionPlotter : MonoBehaviour
             GameObject point = Instantiate(pointPrefab, pos, UnityEngine.Quaternion.Euler(0, 0, angle));
             point.transform.SetParent(this.transform);
             points.Add(point);
+        }
+
+        float verticalThreshold = 2f;
+        for (int i = 1; i < points.Count; i++)
+        {
+            UnityEngine.Vector3 prev = points[i - 1].transform.position;
+            UnityEngine.Vector3 curr = points[i].transform.position;
+            bool isJump = Mathf.Abs(curr.y - prev.y) >= verticalThreshold;
+
+            GameObject lineObj = new GameObject("FunctionSegment");
+            lineObj.transform.SetParent(this.transform);
+            LineRenderer segLine = lineObj.AddComponent<LineRenderer>();
+
+            segLine.material = isJump ? dottedLineMaterial : solidLineMaterial;
+            segLine.widthMultiplier = 0.05f;
+            segLine.startColor = Color.white;
+            segLine.endColor = Color.white;
+            segLine.useWorldSpace = true;
+            segLine.positionCount = 2;
+            segLine.SetPositions(new UnityEngine.Vector3[] { prev, curr });
         }
     }
 
@@ -162,6 +164,12 @@ public class FunctionPlotter : MonoBehaviour
         foreach (var point in points)
             Destroy(point);
         points.Clear();
+
+        foreach (Transform child in transform)
+        {
+            if (child.name.StartsWith("FunctionSegment"))
+                Destroy(child.gameObject);
+        }
     }
 
     void ShowNearestPoint()

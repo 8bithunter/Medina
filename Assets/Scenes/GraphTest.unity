@@ -326,6 +326,8 @@ MonoBehaviour:
   text: {fileID: 0}
   originDot: {fileID: 1451913974}
   resolution: 250
+  solidLineMaterial: {fileID: 2100000, guid: 67ea9640a044c5e4cb296435a2146470, type: 2}
+  dottedLineMaterial: {fileID: 2100000, guid: 2945448cb6127514d9fd0c6a3535261d, type: 2}
   invertFunction: 0
 --- !u!114 &139919738
 MonoBehaviour:
@@ -1609,7 +1611,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1906749092665637525, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.2
+      value: 0.025
       objectReference: {fileID: 0}
     - target: {fileID: 1906749092665637525, guid: 0dfb52114550f054ca2bfc3987d47a77, type: 3}
       propertyPath: m_LocalScale.y
