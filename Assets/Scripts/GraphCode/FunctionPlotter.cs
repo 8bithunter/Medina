@@ -130,7 +130,7 @@ public class FunctionPlotter : MonoBehaviour
             points.Add(point);
         }
 
-        float verticalThreshold = 2f;
+        float verticalThreshold = 8f;
         for (int i = 1; i < points.Count; i++)
         {
             UnityEngine.Vector3 prev = points[i - 1].transform.position;
